@@ -155,4 +155,32 @@ func TestTools_CreateDirIfNotExist(t *testing.T) {
 	assert.NoError(t, err)
 
 	_ = os.Remove("./testdata/mydir")
+
+}
+
+var slugTests = []struct {
+	name          string
+	s             string
+	expected      string
+	errorExpected bool
+}{
+	{name: "valid string", s: "now is the time", expected: "now-is-the-time", errorExpected: false},
+	{name: "empty string", s: "", expected: "", errorExpected: true},
+	{name: "complex string", s: "now is the time for all GOOD men! + fish & such &^123", expected: "now-is-the-time-for-all-good-men-fish-such-123", errorExpected: false},
+	{name: "japanese string", s: "こんにちば", expected: "", errorExpected: true},
+	{name: "japanese string and roman characters", s: "こんにちば hello world", expected: "hello-world", errorExpected: false},
+}
+
+func TestTools_Slugify(t *testing.T) {
+	var testTools Tools
+
+	for _, e := range slugTests {
+		slug, err := testTools.Slugify(e.s)
+		if e.errorExpected {
+			assert.Error(t, err)
+		} else {
+			assert.Equal(t, e.expected, slug)
+			assert.NoError(t, err)
+		}
+	}
 }
