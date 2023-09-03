@@ -25,6 +25,7 @@ const (
 	pngType     = "image/png"
 	filePath    = "./testdata/img.png"
 	uploadsPath = "./testdata/uploads"
+	testDir     = "./testdata/mydir"
 )
 
 var uploadTests = []struct {
@@ -148,13 +149,13 @@ func TestTools_UploadOneFile(t *testing.T) {
 func TestTools_CreateDirIfNotExist(t *testing.T) {
 	var testTool Tools
 
-	err := testTool.CreateDirIfNotExist("./testdata/mydir")
+	err := testTool.CreateDirIfNotExist(testDir)
 	assert.NoError(t, err)
 
-	err = testTool.CreateDirIfNotExist("./testdata/mydir")
+	err = testTool.CreateDirIfNotExist(testDir)
 	assert.NoError(t, err)
 
-	_ = os.Remove("./testdata/mydir")
+	_ = os.Remove(testDir)
 
 }
 
