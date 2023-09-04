@@ -6,6 +6,7 @@ import (
 	"image/png"
 	"io"
 	"mime/multipart"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"sync"
@@ -184,4 +185,23 @@ func TestTools_Slugify(t *testing.T) {
 			assert.NoError(t, err)
 		}
 	}
+}
+
+func TestTools_DownloadStaticFile(t *testing.T) {
+	rr := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/", nil)
+
+	var testTools Tools
+
+	testTools.DownloadStaticFile(rr, req, "./testdata/", "pic.jpg", "puppy.jpg")
+
+	result := rr.Result()
+	defer result.Body.Close()
+
+	assert.Equal(t, result.Header["Content-Length"][0], "98827")
+	assert.Equal(t, result.Header["Content-Disposition"][0], "attachment; filename=\"puppy.jpg\"")
+
+	_, err := io.ReadAll(result.Body)
+	assert.NoError(t, err)
+
 }
