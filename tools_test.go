@@ -35,9 +35,24 @@ var uploadTests = []struct {
 	renameFile    bool
 	errorExpected bool
 }{
-	{name: "allowed no rename", allowedTypes: []string{jpegType, pngType}, renameFile: false, errorExpected: false},
-	{name: "allowed rename", allowedTypes: []string{jpegType, pngType}, renameFile: true, errorExpected: false},
-	{name: "not allowed", allowedTypes: []string{jpegType}, renameFile: false, errorExpected: true},
+	{
+		name:          "allowed no rename",
+		allowedTypes:  []string{jpegType, pngType},
+		renameFile:    false,
+		errorExpected: false,
+	},
+	{
+		name:          "allowed rename",
+		allowedTypes:  []string{jpegType, pngType},
+		renameFile:    true,
+		errorExpected: false,
+	},
+	{
+		name:          "not allowed",
+		allowedTypes:  []string{jpegType},
+		renameFile:    false,
+		errorExpected: true,
+	},
 }
 
 func TestTools_UploadFiles(t *testing.T) {
@@ -166,11 +181,36 @@ var slugTests = []struct {
 	expected      string
 	errorExpected bool
 }{
-	{name: "valid string", s: "now is the time", expected: "now-is-the-time", errorExpected: false},
-	{name: "empty string", s: "", expected: "", errorExpected: true},
-	{name: "complex string", s: "now is the time for all GOOD men! + fish & such &^123", expected: "now-is-the-time-for-all-good-men-fish-such-123", errorExpected: false},
-	{name: "japanese string", s: "こんにちば", expected: "", errorExpected: true},
-	{name: "japanese string and roman characters", s: "こんにちば hello world", expected: "hello-world", errorExpected: false},
+	{
+		name:          "valid string",
+		s:             "now is the time",
+		expected:      "now-is-the-time",
+		errorExpected: false,
+	},
+	{
+		name:          "empty string",
+		s:             "",
+		expected:      "",
+		errorExpected: true,
+	},
+	{
+		name:          "complex string",
+		s:             "now is the time for all GOOD men! + fish & such &^123",
+		expected:      "now-is-the-time-for-all-good-men-fish-such-123",
+		errorExpected: false,
+	},
+	{
+		name:          "japanese string",
+		s:             "こんにちば",
+		expected:      "",
+		errorExpected: true,
+	},
+	{
+		name:          "japanese string and roman characters",
+		s:             "こんにちば hello world",
+		expected:      "hello-world",
+		errorExpected: false,
+	},
 }
 
 func TestTools_Slugify(t *testing.T) {
