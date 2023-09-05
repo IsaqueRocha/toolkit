@@ -89,7 +89,11 @@ func (t *Tools) UploadFiles(r *http.Request, uploadDir string, rename ...bool) (
 	return uploadedFiles, nil
 }
 
-func (t *Tools) getUploadedFiles(uploadedFiles []*UploadedFile, hdr *multipart.FileHeader, uploadDir string, renameFile bool) ([]*UploadedFile, error) {
+func (t *Tools) getUploadedFiles(
+	uploadedFiles []*UploadedFile,
+	hdr *multipart.FileHeader,
+	uploadDir string,
+	renameFile bool) ([]*UploadedFile, error) {
 	infile, err := hdr.Open()
 	if err != nil {
 		return nil, err
@@ -136,7 +140,12 @@ func (t *Tools) isAllowedFileType(fileType string, allowedTypes []string) bool {
 	return false
 }
 
-func (t *Tools) renameUploadedFiles(uploadedFiles []*UploadedFile, hdr *multipart.FileHeader, uploadDir string, infile multipart.File, renameFile bool) ([]*UploadedFile, error) {
+func (t *Tools) renameUploadedFiles(
+	uploadedFiles []*UploadedFile,
+	hdr *multipart.FileHeader,
+	uploadDir string,
+	infile multipart.File,
+	renameFile bool) ([]*UploadedFile, error) {
 	var uploadedFile UploadedFile
 
 	if renameFile {
@@ -167,10 +176,10 @@ func (t *Tools) renameUploadedFiles(uploadedFiles []*UploadedFile, hdr *multipar
 }
 
 // CreateDirIfNotExist creates a directiroy, and all necessary parents, if it does not exist
-func (t *Tools) CreateDirIfNotExist(path string) error {
+func (t *Tools) CreateDirIfNotExist(pathDir string) error {
 	const mode = 0755
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.MkdirAll(path, mode)
+	if _, err := os.Stat(pathDir); os.IsNotExist(err) {
+		err := os.MkdirAll(pathDir, mode)
 		if err != nil {
 			return err
 		}
