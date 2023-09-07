@@ -18,6 +18,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type RoundTripFunc func(req *http.Request) *http.Response
+
+func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req), nil
+}
+
+func NewTestClient(fn RoundTripFunc) *http.Client {
+	return &http.Client{
+		Transport: fn,
+	}
+}
+
+func TestTools_PostJSONToRemote(t *testing.T) {
+	client := NewTestClient(func(req *http.Request) *http.Response {
+		// Test Request Parameters
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(bytes.NewBufferString(`{"success": true}`)),
+			Header:     make(http.Header),
+		}
+	})
+
+	var testTool Tools
+	var foo struct {
+		Bar string `json:"bar"`
+	}
+	foo.Bar = "baz"
+
+	_, _, err := testTool.PushJSONToRemote("http://example.com/some/path", foo, client)
+	assert.NoError(t, err)
+}
+
 func TestTools_RandomString(t *testing.T) {
 	var testTools Tools
 	s := testTools.RandomString(10)
