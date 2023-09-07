@@ -1,6 +1,9 @@
 package toolkit
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
 	"image/png"
@@ -217,13 +220,15 @@ func TestTools_Slugify(t *testing.T) {
 	var testTools Tools
 
 	for _, e := range slugTests {
-		slug, err := testTools.Slugify(e.s)
-		if e.errorExpected {
-			assert.Error(t, err)
-		} else {
-			assert.Equal(t, e.expected, slug)
-			assert.NoError(t, err)
-		}
+		t.Run(e.name, func(t *testing.T) {
+			slug, err := testTools.Slugify(e.s)
+			if e.errorExpected {
+				assert.Error(t, err)
+			} else {
+				assert.Equal(t, e.expected, slug)
+				assert.NoError(t, err)
+			}
+		})
 	}
 }
 
@@ -244,4 +249,152 @@ func TestTools_DownloadStaticFile(t *testing.T) {
 	_, err := io.ReadAll(result.Body)
 	assert.NoError(t, err)
 
+}
+
+var jsonTests = []struct {
+	name          string
+	json          string
+	errorExpected bool
+	maxSize       int
+	allowUnknown  bool
+}{
+	{
+		name:          "good json",
+		json:          `{"foo": "bar"}`,
+		errorExpected: false,
+		maxSize:       1024,
+		allowUnknown:  false,
+	},
+	{
+		name:          "badly formatted json",
+		json:          `{"foo": }`,
+		errorExpected: true,
+		maxSize:       1024,
+		allowUnknown:  false,
+	},
+	{
+		name:          "incorrect type",
+		json:          `{"foo": 1}`,
+		errorExpected: true,
+		maxSize:       1024,
+		allowUnknown:  false,
+	},
+	{
+		name:          "two json files",
+		json:          `{"foo": "1"}{"alpha":"beta"}`,
+		errorExpected: true,
+		maxSize:       1024,
+		allowUnknown:  false,
+	},
+	{
+		name:          "empty body",
+		json:          ``,
+		errorExpected: true,
+		maxSize:       1024,
+		allowUnknown:  false,
+	},
+	{
+		name:          "syntax error",
+		json:          `{"foo": 1"}`,
+		errorExpected: true,
+		maxSize:       1024,
+		allowUnknown:  false,
+	},
+	{
+		name:          "unknown field",
+		json:          `{"fooooo": "bar"}`,
+		errorExpected: true,
+		maxSize:       1024,
+		allowUnknown:  false,
+	},
+	{
+		name:          "allow unknown field",
+		json:          `{"fooooo": "bar"}`,
+		errorExpected: false,
+		maxSize:       1024,
+		allowUnknown:  true,
+	},
+	{
+		name:          "missing field name",
+		json:          `{"jack": "bar"}`,
+		errorExpected: false,
+		maxSize:       1024,
+		allowUnknown:  true,
+	},
+	{
+		name:          "file too large",
+		json:          `{"foo": "bar"}`,
+		errorExpected: true,
+		maxSize:       4,
+		allowUnknown:  true,
+	},
+	{
+		name:          "no json",
+		json:          `hello world`,
+		errorExpected: true,
+		maxSize:       4,
+		allowUnknown:  true,
+	},
+}
+
+func TestTools_ReadJson(t *testing.T) {
+	var testTools Tools
+
+	for _, e := range jsonTests {
+		t.Run(e.name, func(t *testing.T) {
+			// set the max file size
+			testTools.MaxJSONSize = e.maxSize
+			// set the allow unknown
+			testTools.AllowUnknownFields = e.allowUnknown
+			// declare a var to read decoded json into
+			var decodedJSON struct {
+				Foo string `json:"foo"`
+			}
+			// create a request with the body
+			req, err := http.NewRequest("POST", "/", bytes.NewReader([]byte(e.json)))
+			assert.NoError(t, err)
+
+			// create a recorder
+			rr := httptest.NewRecorder()
+
+			err = testTools.ReadJSON(rr, req, &decodedJSON)
+
+			if e.errorExpected {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestTools_WriteJSON(t *testing.T) {
+	var testTools Tools
+
+	rr := httptest.NewRecorder()
+
+	payload := JSONResponse{
+		Error:   false,
+		Message: "foo",
+	}
+
+	heraders := make(http.Header)
+	heraders.Add("FOO", "BAR")
+	err := testTools.WriteJSON(rr, http.StatusOK, payload, heraders)
+	assert.NoError(t, err)
+}
+
+func TestTools_ErrorJSON(t *testing.T) {
+	var testTools Tools
+
+	rr := httptest.NewRecorder()
+	err := testTools.ErrorJSON(rr, errors.New("some error"), http.StatusServiceUnavailable)
+	assert.NoError(t, err)
+
+	var payload JSONResponse
+	decoder := json.NewDecoder(rr.Body)
+	err = decoder.Decode(&payload)
+	assert.NoError(t, err)
+	assert.True(t, payload.Error)
+	assert.Equal(t, http.StatusServiceUnavailable, rr.Code)
 }
